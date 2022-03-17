@@ -36,7 +36,8 @@ const userSchema = new mongoose.Schema({
     googleId: String,
     facebookId: String,
     email: String,
-    password: String
+    password: String,
+    secret:String
 })
 
 userSchema.plugin(passportLocalMongoose)
@@ -152,16 +153,44 @@ app.post('/register', (req, res) => {
 })
 
 app.get('/secrets', (req, res) => {
-    if (req.isAuthenticated()) {
-        res.render('secrets')
-    } else {
-        res.redirect('/login')
-    }
+    User.find({"secret": {$ne:null}}, (err,user)=>{
+        if(err){
+            console.log(err);
+        }else{
+            if(user){
+                res.render('secrets', {user})
+            }
+        }
+    })
+
 })
 app.get('/logout', (req, res) => {
     req.logout();
     res.redirect('/')
 })
+
+app.get('/submit',(req,res)=>{
+    if (req.isAuthenticated()) {
+        res.render('submit')
+    } else {
+        res.redirect('/login')
+    }
+})
+
+app.post('/submit', (req,res)=>{
+    const submittedSecret = req.body.secret
+    User.findById(req.user.id, (err, user)=>{
+        if(!err){
+            user.secret = submittedSecret
+            user.save(()=>{
+                res.redirect('/secrets')
+            })
+        }else{
+
+        }
+    })
+})
+
 app.listen(3000, () => {
     console.log('listening on port 3000')
 })
